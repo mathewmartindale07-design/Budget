@@ -1,6 +1,6 @@
 {
-  "name": "Allowance Tracker",
-  "short_name": "Allowance",
+  "name": "£Budget",
+  "short_name": "£Budget",
   "start_url": ".",
   "display": "standalone",
   "background_color": "0a1022",
