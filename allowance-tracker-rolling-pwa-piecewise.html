@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="theme-color" content="#0b1020">
+  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Weekly Allowance Tracker (£)</title>
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#121935; --muted:#7d86a5; --text:#e9ecf5; --accent:#6ea8fe; --accent-2:#66d19e; --danger:#ff7b7b; --warn:#ffd166;
+      --border:#2a335a; --shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial; background:linear-gradient(180deg,#0b1020,#0e1430); color:var(--text)}
+    .wrap{max-width:980px; margin:48px auto; padding:0 20px}
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:16px}
+    h1{font-size:clamp(22px,3vw,28px); margin:0; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:14px}
+
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); padding:16px}
+    .grid{display:grid; gap:16px}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:800px){.grid.cols-2{grid-template-columns:1fr}}
+
+    label{font-size:14px; color:var(--muted)}
+    input[type=number]{width:150px; appearance:textfield; -moz-appearance:textfield; background:#0d1430; color:var(--text); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:16px}
+    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{appearance:none; margin:0}
+    button{background:var(--accent); color:#071225; border:0; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer}
+    button.secondary{background:transparent; color:var(--text); border:1px solid var(--border)}
+    button.danger{background:var(--danger); color:#1d0b0b}
+    button:disabled{opacity:.5; cursor:not-allowed}
+
+    .row{display:flex; gap:12px; align-items:end; flex-wrap:wrap}
+    .kpi{display:flex; flex-direction:column; gap:6px; background:#0e1535; border:1px dashed var(--border); border-radius:14px; padding:12px 14px}
+    .kpi strong{font-size:20px}
+
+    .progress{height:10px; background:#0b1128; border-radius:999px; overflow:hidden; border:1px solid var(--border)}
+    .progress > div{height:100%; background:linear-gradient(90deg,var(--accent),#a37dff); width:0%}
+    .progress.green > div{background:linear-gradient(90deg,var(--accent-2),#7ce6be)}
+    .progress.red > div{background:linear-gradient(90deg,#ff7b7b,#ff9e7b)}
+
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:16px; border:1px solid var(--border)}
+    thead th{position:sticky; top:0; z-index:1; background:#0f1738; color:var(--muted); font-weight:600; padding:10px 8px; text-align:left; border-bottom:1px solid var(--border)}
+    tbody td{padding:10px 8px; border-bottom:1px solid var(--border)}
+    tbody tr:last-child td{border-bottom:none}
+    .amount{font-variant-numeric:tabular-nums}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block; padding:3px 8px; border-radius:999px; border:1px solid var(--border); background:#0b122d; font-size:12px}
+
+    .over{color:var(--danger)}
+    .under{color:var(--accent-2)}
+    .zero{color:var(--muted)}
+
+    .footer{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
+
+    .help{font-size:13px; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Weekly Allowance Tracker <span class="pill" id="weekRange">—</span></h1>
+        <div class="sub">Enter a weekly allowance in <strong>£</strong>. It will be split evenly across 7 days. Your <em>original daily budget stays fixed</em>. As you log spending, the app shows your remaining allowance and a <em>suggested per‑day target</em> for the rest of the week.</div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="weeklyInput">Weekly allowance (£)</label><br/>
+          <input id="weeklyInput" type="number" min="0" step="0.01" placeholder="0.00" />
+        </div>
+        <button id="setBtn">Set allowance</button>
+        <button class="secondary" id="newWeekBtn" title="Reset spends for a new week">Start new week</button>
+        <button class="secondary" id="clearAllBtn" title="Clear everything (allowance + spends)">Reset all</button>
+      </div>
+    </header>
+
+    <section class="grid cols-2">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div class="kpi"><label>Total spent</label><strong id="totalSpent">£0.00</strong></div>
+          <div class="kpi"><label>Remaining this week</label><strong id="remaining">£0.00</strong></div>
+          <div class="kpi"><label>Remaining days</label><strong id="remainingDays">7</strong></div>
+          <div class="kpi"><label>Suggested per‑day</label><strong id="suggested">£0.00</strong></div>
+        </div>
+        <div class="progress" id="overallBar" style="margin-top:12px"><div></div></div>
+        <div class="help" style="margin-top:8px">Suggested per‑day = remaining after the last entered day ÷ days ahead (excludes that day). All remaining days share the same target until you enter another day’s spend.</div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div>
+            <div class="sub">Tip: Enter spends as you go. Use <em>Clear</em> to zero a day.</div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Original daily budget</th>
+              <th>Spent</th>
+              <th>Remaining (day)</th>
+              <th>Over / Under</th>
+              <th style="width:220px">Log spend</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="footer">
+          <span class="help">Progress bars show % of the day's budget used. Green = under, red = over.</span>
+        </div>
+      </div>
+    </section>
+
+    <p class="help" style="margin-top:16px">Data is saved locally in your browser (no account needed). Works offline. Currency: <strong>£</strong>.</p>
+  </div>
+
+  <script>
+    // ==== Utilities
+    const fmt = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
+    const clamp = (n, min, max)=> Math.min(max, Math.max(min, n));
+
+    // Monday-first helpers
+    function startOfWeekMonday(d=new Date()){
+      const day = d.getDay(); // 0 Sun .. 6 Sat
+      const diff = (day === 0 ? -6 : 1) - day; // move to Monday
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + diff);
+      monday.setHours(0,0,0,0);
+      return monday;
+    }
+    function endOfWeekSunday(d){
+      const mon = startOfWeekMonday(d);
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate()+6);
+      sun.setHours(23,59,59,999);
+      return sun;
+    }
+    function dayIndexMondayFirst(d=new Date()){
+      // Monday=0..Sunday=6
+      let idx = d.getDay() - 1; // Mon 0 .. Sat 5, Sun -1
+      return idx < 0 ? 6 : idx;
+    }
+    const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+    // ==== Storage
+    const STORAGE_KEY = 'allowance_tracker_gbp_v2';
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+      }catch(e){ return null }
+    }
+    function saveState(state){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // ==== App State
+    let state = { weekStartISO: startOfWeekMonday().toISOString().slice(0,10), allowance: 0, spent: Array(7).fill(0), touched: Array(7).fill(false) };
+
+    // Load + week rollover
+    const saved = loadState();
+    const thisWeekISO = startOfWeekMonday().toISOString().slice(0,10);
+    if(saved){
+      if(saved.weekStartISO === thisWeekISO){
+        state = saved;
+        if(!state.touched){ state.touched = (state.spent || Array(7).fill(0)).map(v => v !== 0); }
+      }else{
+        // Different week => roll over: keep allowance, reset spends, update start
+        state = { weekStartISO: thisWeekISO, allowance: saved.allowance || 0, spent: Array(7).fill(0), touched: Array(7).fill(false) };
+        saveState(state);
+      }
+    }else{
+      saveState(state);
+    }
+
+    // ==== DOM refs
+    const weeklyInput = document.getElementById('weeklyInput');
+    const setBtn = document.getElementById('setBtn');
+    const newWeekBtn = document.getElementById('newWeekBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const tbody = document.getElementById('tbody');
+
+    const totalSpentEl = document.getElementById('totalSpent');
+    const remainingEl = document.getElementById('remaining');
+    const suggestedEl = document.getElementById('suggested');
+    const remainingDaysEl = document.getElementById('remainingDays');
+    const weekRangeEl = document.getElementById('weekRange');
+    const overallBar = document.querySelector('#overallBar > div');
+
+    weeklyInput.value = state.allowance ? Number(state.allowance).toFixed(2) : '';
+
+    // ==== Actions
+    setBtn.addEventListener('click', ()=>{
+      const val = parseFloat(weeklyInput.value);
+      state.allowance = isFinite(val) && val >= 0 ? val : 0;
+      saveState(state);
+      render();
+    });
+
+    newWeekBtn.addEventListener('click', ()=>{
+      if(!confirm('Start a new week? This will zero daily spends but keep your allowance.')) return;
+      state.weekStartISO = thisWeekISO;
+      state.spent = Array(7).fill(0);
+      state.touched = Array(7).fill(false);
+      saveState(state);
+      render();
+    });
+
+    clearAllBtn.addEventListener('click', ()=>{
+      if(!confirm('Reset allowance and all spends?')) return;
+      state = { weekStartISO: thisWeekISO, allowance: 0, spent: Array(7).fill(0), touched: Array(7).fill(false) };
+      weeklyInput.value='';
+      saveState(state);
+      render();
+    });
+
+    function addSpend(i, amount){
+      if(!isFinite(amount) || amount <= 0) return;
+      const next = [...state.spent];
+      next[i] = +(next[i] + amount).toFixed(2);
+      state.spent = next;
+      const t = state.touched ? [...state.touched] : Array(7).fill(false);
+      t[i] = true;
+      state.touched = t;
+      saveState(state);
+      render();
+    }
+    function clearSpend(i){
+      state.spent[i] = 0;
+      if(!state.touched) state.touched = Array(7).fill(false);
+      state.touched[i] = true;
+      saveState(state);
+      render();
+    }
+
+    // ==== Render
+    function render(){
+      // Header range
+      const mon = startOfWeekMonday();
+      const sun = endOfWeekSunday();
+      const fmtDate = (d)=> d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+      weekRangeEl.textContent = `${fmtDate(mon)} – ${fmtDate(sun)}`;
+
+            const daily = state.allowance / 7;
+      const totalSpent = state.spent.reduce((a,b)=>a+b,0);
+      const remaining = +(state.allowance - totalSpent).toFixed(2);
+
+      // Determine last entered (touched) day index (-1 if none)
+      const lastTouched = (state.touched || []).slice().reverse().findIndex(x => x);
+      const lastIdx = lastTouched === -1 ? -1 : 6 - lastTouched; // map reverse index back
+      const daysAhead = (lastIdx === -1) ? 7 : (6 - lastIdx); // days after last entered day
+      const spentUpToLast = lastIdx >= 0 ? state.spent.slice(0, lastIdx + 1).reduce((a,b)=>a+b,0) : 0;
+      const remainingAfterLast = +(state.allowance - spentUpToLast).toFixed(2);
+      const suggested = daysAhead > 0 ? remainingAfterLast / daysAhead : 0;
+
+      totalSpentEl.textContent = fmt.format(totalSpent);
+      remainingEl.textContent = fmt.format(remaining);
+      remainingDaysEl.textContent = String(daysAhead);
+      suggestedEl.textContent = fmt.format(Math.max(0, suggested));
+
+      const overallPct = state.allowance > 0 ? clamp((totalSpent / state.allowance) * 100, 0, 100) : 0;
+      overallBar.style.width = overallPct + '%';
+
+      
+      // Table
+      tbody.innerHTML = '';
+      dayNames.forEach((name, i)=>{
+        // Find last touched day strictly before i
+        let prevTouched = -1;
+        if(state.touched){
+          for(let k=i-1; k>=0; k--){
+            if(state.touched[k]) { prevTouched = k; break; }
+          }
+        }
+        const spentUpToPrev = prevTouched >= 0 ? state.spent.slice(0, prevTouched + 1).reduce((a,b)=>a+b,0) : 0;
+        const daysAfterPrev = 6 - prevTouched; // days after the prev touched day
+        const dailyBudget = daysAfterPrev > 0 ? (state.allowance - spentUpToPrev) / daysAfterPrev : 0;
+
+        const spent = state.spent[i] || 0;
+        const remainingDay = +(dailyBudget - spent).toFixed(2);
+        const overUnder = +(spent - dailyBudget).toFixed(2);
+        const pct = dailyBudget > 0 ? clamp((spent / dailyBudget)*100, 0, 200) : 0; // cap at 200%
+
+        const bar = document.createElement('div');
+        bar.className = 'progress ' + (overUnder > 0 ? 'red' : overUnder < 0 ? 'green' : '');
+        bar.innerHTML = `<div style="width:${clamp(pct,0,100)}%"></div>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="muted">${name}${i===dayIndexMondayFirst(new Date()) ? ' <span class="pill">today</span>' : ''}</td>
+          <td class="amount">${fmt.format(dailyBudget)}</td>
+          <td class="amount">${fmt.format(spent)}</td>
+          <td class="amount ${remainingDay<0?'over':remainingDay>0?'under':'zero'}">${fmt.format(remainingDay)}</td>
+          <td class="amount ${overUnder>0?'over':overUnder<0?'under':'zero'}">${overUnder>0?'+':''}${fmt.format(overUnder)}</td>
+          <td>
+            <div class="row">
+              <input type="number" min="0" step="0.01" placeholder="0.00" id="add-${i}" style="width:110px" />
+              <button data-i="${i}" class="addBtn">Add</button>
+              <button data-i="${i}" class="secondary clearBtn">Clear</button>
+            </div>
+            <div style="margin-top:8px">${bar.outerHTML}</div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+
+      // bind buttons after render
+      document.querySelectorAll('.addBtn').forEach(btn=>{
+        btn.onclick = ()=>{
+          const i = +btn.getAttribute('data-i');
+          const inp = document.getElementById(`add-${i}`);
+          const val = parseFloat(inp.value);
+          addSpend(i, isFinite(val)?val:0);
+          inp.value='';
+          inp.focus();
+        };
+      });
+      document.querySelectorAll('.clearBtn').forEach(btn=>{
+        btn.onclick = ()=>{ const i = +btn.getAttribute('data-i'); clearSpend(i); };
+      });
+
+      // Overspend highlight on overall bar
+      const overall = document.getElementById('overallBar');
+      overall.classList.remove('red','green');
+      if(remaining < 0) overall.classList.add('red');
+      else overall.classList.add('green');
+    }
+
+    render();
+  </script>
+
+<script>
+// Create manifest dynamically
+const manifest = {
+  name: "Weekly Allowance Tracker",
+  short_name: "Allowance",
+  start_url: ".",
+  display: "standalone",
+  background_color: "#0b1020",
+  theme_color: "#0b1020",
+  icons: [
+    { src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAg...", sizes: "192x192", type: "image/png" },
+    { src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAB...", sizes: "512x512", type: "image/png" }
+  ]
+};
+const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+const manifestURL = URL.createObjectURL(blob);
+document.querySelector('link[rel="manifest"]').setAttribute('href', manifestURL);
+
+// Register service worker from blob
+const swCode = `
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open('allowance-cache').then(cache => cache.addAll(['./'])));
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+});
+`;
+const swBlob = new Blob([swCode], {type: 'application/javascript'});
+const swURL = URL.createObjectURL(swBlob);
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register(swURL);
+}
+</script>
+
+</body>
+</html>
