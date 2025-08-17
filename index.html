@@ -58,39 +58,14 @@
     .footer{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
 
     .help{font-size:13px; color:var(--muted)}
-  </style>
-
-<style>
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 34px;
-}
-.switch input {display:none;}
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #f44336; /* red when off */
-  transition: .4s;
-  border-radius: 34px;
-}
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-}
-input:checked + .slider { background-color: #4CAF50; } /* green when on */
-input:checked + .slider:before { transform: translateX(26px); }
+  /* Rolling Mode switch (uses theme vars) */
+.switch{position:relative;display:inline-block;width:56px;height:30px;vertical-align:middle}
+.switch input{display:none}
+.slider{position:absolute;cursor:pointer;inset:0;background:var(--danger);transition:.25s;border-radius:999px;box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
+.slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+input:checked+.slider{background:var(--accent)}
+input:checked+.slider:before{transform:translateX(26px)}
 </style>
-
 </head>
 <body>
   <div class="wrap">
@@ -108,6 +83,15 @@ input:checked + .slider:before { transform: translateX(26px); }
         <button class="secondary" id="newWeekBtn" title="Reset spends for a new week">Start new week</button>
         <button class="secondary" id="clearAllBtn" title="Clear everything (allowance + spends)">Reset all</button>
       </div>
+    
+    <div class="row" style="gap:12px; align-items:center">
+      <label style="color:var(--muted)">Rolling mode</label>
+      <label class="switch">
+        <input type="checkbox" id="rollingToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
     </header>
 
     <section class="grid cols-2">
@@ -117,6 +101,7 @@ input:checked + .slider:before { transform: translateX(26px); }
           <div class="kpi"><label>Remaining this week</label><strong id="remaining">£0.00</strong></div>
           <div class="kpi"><label>Remaining days</label><strong id="remainingDays">7</strong></div>
           <div class="kpi"><label>Suggested per‑day</label><strong id="suggested">£0.00</strong></div>
+          <div class="kpi" id="moneySavedKpi" style="display:none"><label>Money saved</label><strong id="moneySaved">—</strong></div>
         </div>
         <div class="progress" id="overallBar" style="margin-top:12px"><div></div></div>
         <div class="help" style="margin-top:8px">Suggested per‑day = remaining after the last entered day ÷ days ahead (excludes that day). All remaining days share the same target until you enter another day’s spend.</div>
@@ -223,6 +208,10 @@ input:checked + .slider:before { transform: translateX(26px); }
     const remainingDaysEl = document.getElementById('remainingDays');
     const weekRangeEl = document.getElementById('weekRange');
     const overallBar = document.querySelector('#overallBar > div');
+    const rollingToggle = document.getElementById('rollingToggle');
+    const moneySavedKpi = document.getElementById('moneySavedKpi');
+    const moneySavedEl = document.getElementById('moneySaved');
+
 
     weeklyInput.value = state.allowance ? Number(state.allowance).toFixed(2) : '';
 
@@ -232,9 +221,7 @@ input:checked + .slider:before { transform: translateX(26px); }
       state.allowance = isFinite(val) && val >= 0 ? val : 0;
       saveState(state);
       render();
-
-document.getElementById('rollingToggle').addEventListener('change', ()=>{ render(); });
-
+  if(rollingToggle){ rollingToggle.addEventListener('change', ()=>render()); }
     });
 
     newWeekBtn.addEventListener('click', ()=>{
@@ -281,6 +268,8 @@ document.getElementById('rollingToggle').addEventListener('change', ()=>{ render
       const fmtDate = (d)=> d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
       weekRangeEl.textContent = `${fmtDate(mon)} – ${fmtDate(sun)}`;
 
+      const rollingMode = rollingToggle ? !!rollingToggle.checked : true;
+
             const daily = state.allowance / 7;
       const totalSpent = state.spent.reduce((a,b)=>a+b,0);
       const remaining = +(state.allowance - totalSpent).toFixed(2);
@@ -314,7 +303,9 @@ document.getElementById('rollingToggle').addEventListener('change', ()=>{ render
         }
         const spentUpToPrev = prevTouched >= 0 ? state.spent.slice(0, prevTouched + 1).reduce((a,b)=>a+b,0) : 0;
         const daysAfterPrev = 6 - prevTouched; // days after the prev touched day
-        const dailyBudget = daysAfterPrev > 0 ? (state.allowance - spentUpToPrev) / daysAfterPrev : 0;
+        let dailyBudget = daysAfterPrev > 0 ? (state.allowance - spentUpToPrev) / daysAfterPrev : 0;
+        if(!rollingMode){ dailyBudget = state.allowance / 7; }
+
 
         const spent = state.spent[i] || 0;
         const remainingDay = +(dailyBudget - spent).toFixed(2);
@@ -363,25 +354,25 @@ document.getElementById('rollingToggle').addEventListener('change', ()=>{ render
       // Overspend highlight on overall bar
       const overall = document.getElementById('overallBar');
       overall.classList.remove('red','green');
-  // Rolling mode toggle
-  const rollingMode = document.getElementById('rollingToggle').checked;
-
-  // Money saved box if rolling mode off
-  const moneySavedBox = document.getElementById('moneySavedBox');
-  if(!rollingMode){
-    if(remaining === 0){
-      moneySavedBox.textContent = 'None';
-    } else if(remaining < 0){
-      moneySavedBox.textContent = 'You went over by: ' + fmt.format(Math.abs(remaining));
-    } else {
-      moneySavedBox.textContent = 'You saved ' + fmt.format(remaining);
-    }
-  } else {
-    moneySavedBox.textContent = '';
-  }
-
       if(remaining < 0) overall.classList.add('red');
       else overall.classList.add('green');
+
+      // Money Saved box (only when rolling OFF)
+      if (moneySavedKpi) {
+        if (!rollingMode) {
+          moneySavedKpi.style.display = 'block';
+          if (remaining === 0) {
+            moneySavedEl.textContent = 'None';
+          } else if (remaining < 0) {
+            moneySavedEl.textContent = 'You went over by ' + fmt.format(Math.abs(remaining));
+          } else {
+            moneySavedEl.textContent = 'You saved ' + fmt.format(remaining);
+          }
+        } else {
+          moneySavedKpi.style.display = 'none';
+        }
+      }
+
     }
 
     render();
