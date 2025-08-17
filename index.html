@@ -362,14 +362,14 @@ input:checked+.slider:before{transform:translateX(26px)}
         if (!rollingMode) {
           moneySavedKpi.style.display = 'block';
           if (remaining === 0) {
-            moneySavedEl.textContent = 'None';
+            moneySavedEl.textContent = ' None';
           } else if (remaining < 0) {
-            moneySavedEl.textContent = 'You went over by ' + fmt.format(Math.abs(remaining));
+            moneySavedEl.textContent = ' You went over by ' + fmt.format(Math.abs(remaining));
           } else {
             moneySavedEl.textContent = ' You saved ' + fmt.format(remaining);
           }
         } else {
-          moneySavedKpi.style.display = 'none';
+          moneySavedKpi.style.display = ' none';
         }
       }
 
