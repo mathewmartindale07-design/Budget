@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a1022">
+  <link rel="icon" href="icon-192.jpg" sizes="192x192">
+  <meta charset="UTF-8" />
+  <!-- Mobile zoom fix (your chosen baseline scale) -->
+  <meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=1, minimum-scale=0.8, user-scalable=no">
+  <title>£Budget (£)</title>
+
+  <style>
+    /* ---------- Theme variable system ---------- */
+    :root{
+      /* base defaults to avoid FOUC before JS applies class */
+      --bg:#0b1020; --bg2:#0e1430;
+      --panel:#121935; --muted:#7d86a5; --text:#e9ecf5;
+      --accent:#6ea8fe; --accent-2:#66d19e; --danger:#ff7b7b; --warn:#ffd166;
+      --border:#2a335a; --shadow:0 10px 30px rgba(0,0,0,.25);
+      --input:#0d1430; --track:#0b1128; --header:#0f1738; --kpi:#0e1535;
+    }
+
+    /* ---------- THEMES (Original, Redscale, Pinkscale, Greyscale) ---------- */
+    /* Name mapping matches your request exactly: original, redscale, pinkscale, greyscale */
+    .theme-original{
+      --bg:#0b1020; --bg2:#0e1430;
+      --panel:#121935; --muted:#7d86a5; --text:#e9ecf5;
+      --accent:#6ea8fe; --accent-2:#66d19e; --danger:#ff7b7b; --warn:#ffd166;
+      --border:#2a335a; --input:#0d1430; --track:#0b1128; --header:#0f1738; --kpi:#0e1535;
+    }
+
+    .theme-redscale{
+      --bg:#1a0b0b; --bg2:#2a1212;
+      --panel:#2b1313; --muted:#caa8a8; --text:#f8eaea;
+      --accent:#ff6e6e; --accent-2:#ff9a9a; --danger:#ff4444; --warn:#ffb366;
+      --border:#5a2a2a; --input:#261010; --track:#2a0f0f; --header:#3a1818; --kpi:#331313;
+    }
+
+    .theme-pinkscale{
+      --bg:#1a0b1a; --bg2:#2a122a;
+      --panel:#2b132b; --muted:#d6b8d6; --text:#ffeefe;
+      --accent:#ff6eff; --accent-2:#ff99ff; --danger:#ff66aa; --warn:#ffb3d9;
+      --border:#5a2a5a; --input:#261026; --track:#2a0f29; --header:#3a183a; --kpi:#331333;
+    }
+
+    .theme-greyscale{
+      --bg:#0f0f0f; --bg2:#181818;
+      --panel:#1f1f1f; --muted:#bcbcbc; --text:#eeeeee;
+      --accent:#9a9a9a; --accent-2:#c9c9c9; --danger:#d46f6f; --warn:#d8c06a;
+      --border:#323232; --input:#181818; --track:#141414; --header:#242424; --kpi:#1a1a1a;
+    }
+
+    /* ---------- Base UI ---------- */
+    *{box-sizing:border-box}
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+      background:linear-gradient(180deg,var(--bg),var(--bg2));
+      color:var(--text);
+    }
+    .wrap{max-width:980px; margin:48px auto; padding:0 20px}
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:16px}
+    h1{font-size:clamp(22px,3vw,28px); margin:0; letter-spacing:.2px}
+    .sub{color:var(--muted); font-size:14px}
+
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); padding:16px}
+    .grid{display:grid; gap:16px}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:600px){.grid.cols-2{grid-template-columns:1fr}}
+
+    label{font-size:14px; color:var(--muted)}
+    input[type=number]{
+      width:150px; appearance:textfield; -moz-appearance:textfield;
+      background:var(--input); color:var(--text); border:1px solid var(--border);
+      border-radius:12px; padding:10px 12px; font-size:16px
+    }
+    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{appearance:none; margin:0}
+
+    button{background:var(--accent); color:#071225; border:0; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer}
+    button.secondary{background:transparent; color:var(--text); border:1px solid var(--border)}
+    button.danger{background:var(--danger); color:#1d0b0b}
+    button:disabled{opacity:.6; cursor:not-allowed}
+
+    .row{display:flex; gap:12px; align-items:end; flex-wrap:wrap}
+    .kpi{
+      display:flex; flex-direction:column; gap:6px; background:var(--kpi);
+      border:1px dashed var(--border); border-radius:14px; padding:12px 14px
+    }
+    .kpi strong{font-size:20px}
+
+    .progress{height:10px; background:var(--track); border-radius:999px; overflow:hidden; border:1px solid var(--border)}
+    .progress > div{height:100%; background:linear-gradient(90deg,var(--accent),#a37dff); width:0%}
+    .progress.green > div{background:linear-gradient(90deg,var(--accent-2),#7ce6be)}
+    .progress.red > div{background:linear-gradient(90deg,#ff7b7b,#ff9e7b)}
+
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:16px; border:1px solid var(--border)}
+    thead th{position:sticky; top:0; z-index:1; background:var(--header); color:var(--muted); font-weight:600; padding:10px 8px; text-align:left; border-bottom:1px solid var(--border)}
+    tbody td{padding:10px 8px; border-bottom:1px solid var(--border)}
+    tbody tr:last-child td{border-bottom:none}
+    .amount{font-variant-numeric:tabular-nums}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block; padding:3px 8px; border-radius:999px; border:1px solid var(--border); background:color-mix(in srgb, var(--panel) 70%, black 30%); font-size:12px}
+
+    .over{color:var(--danger)}
+    .under{color:var(--accent-2)}
+    .zero{color:var(--muted)}
+
+    .row-done{opacity:.6}
+    .row-done input, .row-done button{pointer-events:none}
+    .row-done .pill-done{background:color-mix(in srgb, var(--panel) 70%, black 30%); border:1px solid var(--border)}
+
+    .footer{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
+    .help{font-size:13px; color:var(--muted)}
+
+    /* Bottom controls + selects */
+    .bottom-controls{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:24px;flex-wrap:wrap}
+    .select{background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:8px 10px;font-size:14px}
+
+    /* Rolling Mode switch (kept for compatibility even if hidden in UI) */
+    .switch{position:relative;display:inline-block;width:56px;height:30px;vertical-align:middle}
+    .switch input{display:none}
+    .slider{position:absolute;cursor:pointer;inset:0;background:var(--danger);transition:.25s;border-radius:999px;box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
+    .slider:before{content:"";position:absolute;height:24px;width:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+    input:checked+.slider{background:var(--accent)}
+    input:checked+.slider:before{transform:translateX(26px)}
+
+    /* Mobile tweaks */
+    @media (max-width:480px){
+      body{font-size:14px}
+      .wrap{padding:0 10px}
+      .card{padding:12px; border-radius:12px}
+      input[type=number]{width:120px; font-size:14px}
+      button{padding:8px 10px; font-size:14px}
+      table th, table td{font-size:13px; padding:6px 4px}
+    }
+  </style>
+</head>
+<body class="theme-original">
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 id="appTitle">£Budget <span class="pill" id="weekRange">—</span></h1>
+        <div class="sub" id="subtitle">
+          Enter a weekly allowance in <strong>£</strong>. It will be split evenly across 7 days.
+          Your <em>original daily budget stays fixed</em>. As you log spending, the app shows your remaining allowance
+          and a <em>suggested per-day target</em> for the rest of the week.
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="weeklyInput" id="weeklyLabel">Weekly allowance (£)</label><br/>
+          <input id="weeklyInput" type="number" min="0" step="0.01" placeholder="0.00" />
+        </div>
+        <button id="setBtn">Set allowance</button>
+        <button class="secondary" id="newWeekBtn" title="Reset spends for a new week">Start new week</button>
+        <button class="secondary" id="clearAllBtn" title="Clear everything (allowance + spends)">Reset all</button>
+      </div>
+
+      <!-- Theme selector (top-right) -->
+      <div class="row" style="gap:12px; align-items:center; margin-left:auto;">
+        <label style="color:var(--muted)">Theme</label>
+        <select id="themeSelect" class="select" aria-label="Theme selector">
+          <option value="original">Original</option>
+          <option value="redscale">Redscale</option>
+          <option value="pinkscale">Pinkscale</option>
+          <option value="greyscale">Greyscale</option>
+        </select>
+      </div>
+    </header>
+
+    <section class="grid cols-2">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div class="kpi"><label id="totalSpentLabel">Total spent</label><strong id="totalSpent">£0.00</strong></div>
+          <div class="kpi"><label id="remainingWeekLabel">Remaining this week</label><strong id="remaining">£0.00</strong></div>
+          <div class="kpi"><label id="remainingDaysLabel">Remaining days</label><strong id="remainingDays">7</strong></div>
+          <div class="kpi"><label id="suggestedLabel">Suggested per-day</label><strong id="suggested">£0.00</strong></div>
+          <div class="kpi" id="moneySavedKpi" style="display:none"><label id="moneySavedLabel">Money saved</label><strong id="moneySaved">—</strong></div>
+        </div>
+        <div class="progress" id="overallBar" style="margin-top:12px"><div></div></div>
+        <div class="help" style="margin-top:8px" id="suggestedHelp">
+          Suggested per-day = remaining after the last completed day ÷ days ahead (excludes that day).
+          All remaining days share the same target until you complete another day.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center">
+          <div><div class="sub" id="tipText">Tip: Enter spends as you go. Use <em>Clear</em> to zero a day.</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th id="dayCol">Day</th>
+              <th id="origBudgetCol">Daily budget</th>
+              <th id="spentCol">Spent</th>
+              <th id="remainingDayCol">Remaining (day)</th>
+              <th id="overUnderCol">Over / Under</th>
+              <th style="width:260px" id="logSpendCol">Log spend</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+
+        <div class="footer">
+          <span class="help" id="progressHelp">Progress bars show % of the day's budget used. Green = under, red = over.</span>
+        </div>
+      </div>
+    </section>
+
+    <p class="help" style="margin-top:16px" id="footerNote">
+      By Mathew Martindale. Data is saved locally in your browser (no account needed). Works offline.
+      Currency: <strong id="currencyNote">£</strong>.
+    </p>
+
+    <!-- Bottom language & currency controls -->
+    <div class="bottom-controls">
+      <label style="color:var(--muted)" id="languageLabel">Language</label>
+      <select id="langSelect" class="select">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+      </select>
+      <label style="color:var(--muted)" id="currencyLabel">Currency</label>
+      <select id="currencySelect" class="select">
+        <option value="GBP">GBP £</option>
+        <option value="USD">USD $</option>
+        <option value="CAD">CAD C$</option>
+        <option value="EUR">EUR €</option>
+        <option value="JPY">JPY ¥</option>
+      </select>
+    </div>
+  </div>
+  <!-- ===== Core App Script (translations, currency, storage, rendering) ===== -->
+  <script>
+    // ==== I18N & Currency
+    const LANG_KEY = 'budget_lang';
+    const CURR_KEY = 'budget_currency';
+
+    const locales = { en: 'en-GB', es:'es-ES', fr:'fr-FR', de:'de-DE' };
+
+    const translations = {
+      en: {
+        title: (sym)=> `${sym}Budget (${sym})`,
+        subtitle: (sym)=> `Enter a weekly allowance in <strong>${sym}</strong>. It will be split evenly across 7 days. Your <em>original daily budget stays fixed</em>. As you log spending, the app shows your remaining allowance and a <em>suggested per-day target</em> for the rest of the week.`,
+        weeklyLabel: (sym)=> `Weekly allowance (${sym})`,
+        setBtn: 'Set allowance',
+        newWeekBtn: 'Start new week',
+        clearAllBtn: 'Reset all',
+        rollingLabel: 'Rolling mode',
+        totalSpentLabel: 'Total spent',
+        remainingWeekLabel: 'Remaining this week',
+        remainingDaysLabel: 'Remaining days',
+        suggestedLabel: 'Suggested per-day',
+        moneySavedLabel: 'Money saved',
+        suggestedHelp: "Suggested per-day = remaining after the last completed day ÷ days ahead (excludes that day). All remaining days share the same target until you complete another day.",
+        tipText: 'Tip: Enter spends as you go. Use <em>Clear</em> to zero a day.',
+        dayCol: 'Day',
+        origBudgetCol: 'Daily budget',
+        spentCol: 'Spent',
+        remainingDayCol: 'Remaining (day)',
+        overUnderCol: 'Over / Under',
+        logSpendCol: 'Log spend',
+        progressHelp: "Progress bars show % of the day's budget used. Green = under, red = over.",
+        footerNote: 'By Mathew Martindale. Data is saved locally in your browser (no account needed). Works offline. Currency: ',
+        today: 'today',
+        language: 'Language',
+        currency: 'Currency',
+        confirmNewWeek: 'Start a new week? This will zero daily spends but keep your allowance.',
+        confirmResetAll: 'Reset allowance and all spends?',
+        moneyNone: ' None',
+        add: 'Add',
+        clear: 'Clear',
+        dayDone: 'Day done',
+        confirmDayDone: 'Mark this day as done? You will not be able to edit it afterwards.',
+        doneBadge: 'done'
+      },
+      es: {
+        title: (sym)=> `${sym}Presupuesto (${sym})`,
+        subtitle: (sym)=> `Introduce un presupuesto semanal en <strong>${sym}</strong>. Se divide de forma equitativa entre 7 días. Tu <em>presupuesto diario original se mantiene fijo</em>. A medida que registres gastos, verás el restante y una <em>meta diaria sugerida</em>.`,
+        weeklyLabel: (sym)=> `Presupuesto semanal (${sym})`,
+        setBtn: 'Establecer',
+        newWeekBtn: 'Nueva semana',
+        clearAllBtn: 'Reiniciar todo',
+        rollingLabel: 'Modo acumulativo',
+        totalSpentLabel: 'Gasto total',
+        remainingWeekLabel: 'Restante esta semana',
+        remainingDaysLabel: 'Días restantes',
+        suggestedLabel: 'Sugerido por día',
+        moneySavedLabel: 'Dinero ahorrado',
+        suggestedHelp: 'Por-día = restante tras el último día completado ÷ días por delante (excluye ese día).',
+        tipText: 'Consejo: Ingresa gastos sobre la marcha. Usa <em>Borrar</em> para poner a cero un día.',
+        dayCol: 'Día',
+        origBudgetCol: 'Presupuesto diario',
+        spentCol: 'Gastado',
+        remainingDayCol: 'Restante (día)',
+        overUnderCol: 'Más / Menos',
+        logSpendCol: 'Registrar gasto',
+        progressHelp: 'Las barras muestran el % del presupuesto diario usado. Verde = por debajo, rojo = por encima.',
+        footerNote: 'Por Mathew Martindale. Los datos se guardan localmente en tu navegador (no se necesita cuenta). Funciona sin conexión. Moneda: ',
+        today: 'hoy',
+        language: 'Idioma',
+        currency: 'Moneda',
+        confirmNewWeek: '¿Empezar nueva semana? Esto borrará los gastos diarios pero mantendrá tu presupuesto.',
+        confirmResetAll: '¿Restablecer presupuesto y todos los gastos?',
+        moneyNone: ' Ninguno',
+        add: 'Añadir',
+        clear: 'Borrar',
+        dayDone: 'Día completo',
+        confirmDayDone: '¿Marcar este día como completo? Después no podrás editarlo.',
+        doneBadge: 'hecho'
+      },
+      fr: {
+        title: (sym)=> `${sym}Budget (${sym})`,
+        subtitle: (sym)=> `Entrez un budget hebdomadaire en <strong>${sym}</strong>. Il est réparti équitablement sur 7 jours. Votre <em>budget quotidien d’origine reste fixe</em>. En saisissant vos dépenses, l’application affiche le restant et une <em>cible quotidienne suggérée</em> pour la semaine.`,
+        weeklyLabel: (sym)=> `Budget hebdomadaire (${sym})`,
+        setBtn: 'Définir',
+        newWeekBtn: 'Nouvelle semaine',
+        clearAllBtn: 'Tout réinitialiser',
+        rollingLabel: 'Mode cumulatif',
+        totalSpentLabel: 'Total dépensé',
+        remainingWeekLabel: 'Restant cette semaine',
+        remainingDaysLabel: 'Jours restants',
+        suggestedLabel: 'Conseil par jour',
+        moneySavedLabel: 'Argent économisé',
+        suggestedHelp: 'Par jour = restant après le dernier jour complété ÷ jours à venir (hors ce jour).',
+        tipText: 'Astuce : Saisissez vos dépenses au fur et à mesure. Utilisez <em>Effacer</em> pour remettre un jour à zéro.',
+        dayCol: 'Jour',
+        origBudgetCol: 'Budget quotidien',
+        spentCol: 'Dépensé',
+        remainingDayCol: 'Restant (jour)',
+        overUnderCol: '+ / -',
+        logSpendCol: 'Entrer dépense',
+        progressHelp: "Les barres affichent le % du budget quotidien utilisé. Vert = en dessous, rouge = au-dessus.",
+        footerNote: 'Par Mathew Martindale. Données enregistrées localement dans votre navigateur (aucun compte requis). Fonctionne hors ligne. Devise : ',
+        today: 'aujourd’hui',
+        language: 'Langue',
+        currency: 'Devise',
+        confirmNewWeek: 'Commencer une nouvelle semaine ? Les dépenses quotidiennes seront remises à zéro.',
+        confirmResetAll: 'Réinitialiser le budget et toutes les dépenses ?',
+        moneyNone: ' Aucune',
+        add: 'Ajouter',
+        clear: 'Effacer',
+        dayDone: 'Jour terminé',
+        confirmDayDone: 'Marquer ce jour comme terminé ? Vous ne pourrez plus le modifier après.',
+        doneBadge: 'terminé'
+      },
+      de: {
+        title: (sym)=> `${sym}Budget (${sym})`,
+        subtitle: (sym)=> `Geben Sie ein Wochenbudget in <strong>${sym}</strong> ein. Es wird gleichmäßig auf 7 Tage verteilt. Ihr <em>ursprüngliches Tagesbudget bleibt fix</em>. Beim Erfassen der Ausgaben sehen Sie den verbleibenden Betrag und eine <em>tägliche Empfehlung</em>.`,
+        weeklyLabel: (sym)=> `Wöchentliches Budget (${sym})`,
+        setBtn: 'Festlegen',
+        newWeekBtn: 'Neue Woche',
+        clearAllBtn: 'Alles zurücksetzen',
+        rollingLabel: 'Rollierender Modus',
+        totalSpentLabel: 'Gesamtausgaben',
+        remainingWeekLabel: 'Verbleibend diese Woche',
+        remainingDaysLabel: 'Verbleibende Tage',
+        suggestedLabel: 'Tagesempfehlung',
+        moneySavedLabel: 'Gespartes Geld',
+        suggestedHelp: 'Pro-Tag = verbleibend nach dem zuletzt abgeschlossenen Tag ÷ verbleibende Tage (ohne diesen Tag).',
+        tipText: 'Tipp: Tragen Sie Ausgaben sofort ein. Mit <em>Löschen</em> setzen Sie den Tag zurück.',
+        dayCol: 'Tag',
+        origBudgetCol: 'Tagesbudget',
+        spentCol: 'Ausgegeben',
+        remainingDayCol: 'Verbleibend (Tag)',
+        overUnderCol: '+ / -',
+        logSpendCol: 'Ausgabe erfassen',
+        progressHelp: 'Balken zeigen den % des Tagesbudgets. Grün = darunter, Rot = darüber.',
+        footerNote: 'Von Mathew Martindale. Daten werden lokal im Browser gespeichert (kein Konto nötig). Offline nutzbar. Währung: ',
+        today: 'heute',
+        language: 'Sprache',
+        currency: 'Währung',
+        confirmNewWeek: 'Neue Woche starten? Tagesausgaben werden gelöscht.',
+        confirmResetAll: 'Budget und alle Ausgaben zurücksetzen?',
+        moneyNone: ' Kein(e)',
+        add: 'Hinzufügen',
+        clear: 'Löschen',
+        dayDone: 'Tag fertig',
+        confirmDayDone: 'Diesen Tag als fertig markieren? Danach ist keine Bearbeitung mehr möglich.',
+        doneBadge: 'fertig'
+      }
+    };
+
+    const currencyMap = {
+      GBP: { code: 'GBP', symbol: '£', locale: 'en-GB' },
+      USD: { code: 'USD', symbol: '$', locale: 'en-US' },
+      CAD: { code: 'CAD', symbol: 'C$', locale: 'en-CA' },
+      EUR: { code: 'EUR', symbol: '€', locale: 'fr-FR' },
+      JPY: { code: 'JPY', symbol: '¥', locale: 'ja-JP' }
+    };
+
+    function getSymbol() {
+      return (currencyMap[userCurrency] || currencyMap.GBP).symbol;
+    }
+    function fmtCurrency(n){
+      const c = currencyMap[userCurrency] || currencyMap.GBP;
+      return new Intl.NumberFormat(c.locale, { style: 'currency', currency: c.code, currencyDisplay: 'symbol' }).format(n || 0);
+    }
+    function fmtDate(d){
+      const langLoc = locales[userLang] || 'en-GB';
+      return d.toLocaleDateString(langLoc, { day:'2-digit', month:'short' });
+    }
+    function getDays(lang){
+      switch(lang){
+        case 'es': return ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+        case 'fr': return ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+        case 'de': return ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+        default: return ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+      }
+    }
+
+    // ==== Utilities
+    const clamp = (n, min, max)=> Math.min(max, Math.max(min, n));
+
+    // Monday-first helpers
+    function startOfWeekMonday(d=new Date()){
+      const day = d.getDay(); // 0 Sun .. 6 Sat
+      const diff = (day === 0 ? -6 : 1) - day; // move to Monday
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + diff);
+      monday.setHours(0,0,0,0);
+      return monday;
+    }
+    function endOfWeekSunday(d){
+      const mon = startOfWeekMonday(d);
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate()+6);
+      sun.setHours(23,59,59,999);
+      return sun;
+    }
+    function dayIndexMondayFirst(d=new Date()){
+      let idx = d.getDay() - 1; // Mon 0 .. Sat 5, Sun -1
+      return idx < 0 ? 6 : idx;
+    }
+
+    // ==== Storage
+    const STORAGE_KEY = 'allowance_tracker_gbp_v3';
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+      }catch(e){ return null }
+    }
+    function saveState(state){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // ==== App State
+    let state = { weekStartISO: startOfWeekMonday().toISOString().slice(0,10), allowance: 0, spent: Array(7).fill(0), done: Array(7).fill(false) };
+
+    // Language/Currency state (defaults EN + GBP)
+    let userLang = localStorage.getItem(LANG_KEY) || 'en';
+    let userCurrency = localStorage.getItem(CURR_KEY) || 'GBP';
+
+    // Load + week rollover
+    const saved = loadState();
+    const thisWeekISO = startOfWeekMonday().toISOString().slice(0,10);
+    if(saved){
+      if(saved.weekStartISO === thisWeekISO){
+        state = Object.assign({done:Array(7).fill(false)}, saved);
+        if(!state.done) state.done = Array(7).fill(false);
+      }else{
+        state = { weekStartISO: thisWeekISO, allowance: saved.allowance || 0, spent: Array(7).fill(0), done: Array(7).fill(false) };
+        saveState(state);
+      }
+    }else{
+      saveState(state);
+    }
+
+    // ==== DOM refs
+    const weeklyInput = document.getElementById('weeklyInput');
+    const setBtn = document.getElementById('setBtn');
+    const newWeekBtn = document.getElementById('newWeekBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const tbody = document.getElementById('tbody');
+
+    const totalSpentEl = document.getElementById('totalSpent');
+    const remainingEl = document.getElementById('remaining');
+    const suggestedEl = document.getElementById('suggested');
+    const remainingDaysEl = document.getElementById('remainingDays');
+    const weekRangeEl = document.getElementById('weekRange');
+    const overallBar = document.querySelector('#overallBar > div');
+    const rollingToggle = document.getElementById('rollingToggle');
+    const moneySavedKpi = document.getElementById('moneySavedKpi');
+    const moneySavedEl = document.getElementById('moneySaved');
+
+    const appTitle = document.getElementById('appTitle');
+    const subtitle = document.getElementById('subtitle');
+    const weeklyLabel = document.getElementById('weeklyLabel');
+    const totalSpentLabel = document.getElementById('totalSpentLabel');
+    const remainingWeekLabel = document.getElementById('remainingWeekLabel');
+    const remainingDaysLabel = document.getElementById('remainingDaysLabel');
+    const suggestedLabel = document.getElementById('suggestedLabel');
+    const suggestedHelp = document.getElementById('suggestedHelp');
+    const tipText = document.getElementById('tipText');
+    const dayCol = document.getElementById('dayCol');
+    const origBudgetCol = document.getElementById('origBudgetCol');
+    const spentCol = document.getElementById('spentCol');
+    const remainingDayCol = document.getElementById('remainingDayCol');
+    const overUnderCol = document.getElementById('overUnderCol');
+    const logSpendCol = document.getElementById('logSpendCol');
+    const progressHelp = document.getElementById('progressHelp');
+    const footerNote = document.getElementById('footerNote');
+    const currencyNote = document.getElementById('currencyNote');
+    const rollingLabel = document.getElementById('rollingLabel');
+    const languageLabel = document.getElementById('languageLabel');
+    const currencyLabel = document.getElementById('currencyLabel');
+    const moneySavedLabel = document.getElementById('moneySavedLabel');
+
+    const langSelect = document.getElementById('langSelect');
+    const currencySelect = document.getElementById('currencySelect');
+
+    weeklyInput.value = state.allowance ? Number(state.allowance).toFixed(2) : '';
+
+    // ==== Actions
+    setBtn.addEventListener('click', ()=>{
+      const val = parseFloat(weeklyInput.value);
+      state.allowance = isFinite(val) && val >= 0 ? val : 0;
+      saveState(state);
+      render();
+    });
+
+    newWeekBtn.addEventListener('click', ()=>{
+      if(!confirm(translations[userLang].confirmNewWeek)) return;
+      state.weekStartISO = thisWeekISO;
+      state.spent = Array(7).fill(0);
+      state.done = Array(7).fill(false);
+      saveState(state);
+      render();
+    });
+
+    clearAllBtn.addEventListener('click', ()=>{
+      if(!confirm(translations[userLang].confirmResetAll)) return;
+      state = { weekStartISO: thisWeekISO, allowance: 0, spent: Array(7).fill(0), done: Array(7).fill(false) };
+      weeklyInput.value='';
+      saveState(state);
+      render();
+    });
+
+    function addSpend(i, amount){
+      if(!isFinite(amount) || amount <= 0) return;
+      if(state.done[i]) return; // locked
+      const next = [...state.spent];
+      next[i] = +(next[i] + amount).toFixed(2);
+      state.spent = next;
+      saveState(state);
+      render();
+    }
+    function clearSpend(i){
+      if(state.done[i]) return;
+      state.spent[i] = 0;
+      saveState(state);
+      render();
+    }
+    function markDayDone(i){
+      if(state.done[i]) return;
+      if(!confirm(translations[userLang].confirmDayDone)) return;
+      const next = [...state.done];
+      next[i] = true;
+      state.done = next;
+      saveState(state);
+      render();
+    }
+
+    // Language & currency handlers
+    langSelect.value = userLang;
+    currencySelect.value = userCurrency;
+    langSelect.addEventListener('change', e => {
+      userLang = e.target.value;
+      localStorage.setItem(LANG_KEY, userLang);
+      renderTexts();
+      render();
+    });
+    currencySelect.addEventListener('change', e => {
+      userCurrency = e.target.value;
+      localStorage.setItem(CURR_KEY, userCurrency);
+      renderTexts();
+      render();
+    });
+
+    if(rollingToggle){
+      rollingToggle.addEventListener('change', ()=>render());
+    }
+
+    function renderTexts(){
+      const tr = translations[userLang] || translations.en;
+      const sym = getSymbol();
+
+      document.title = tr.title(sym);
+      appTitle.childNodes[0].nodeValue = tr.title(sym) + ' ';
+      subtitle.innerHTML = tr.subtitle(sym);
+      weeklyLabel.textContent = tr.weeklyLabel(sym);
+      document.getElementById('setBtn').textContent = tr.setBtn;
+      document.getElementById('newWeekBtn').textContent = tr.newWeekBtn;
+      document.getElementById('clearAllBtn').textContent = tr.clearAllBtn;
+      if (document.getElementById('rollingLabel')) document.getElementById('rollingLabel').textContent = tr.rollingLabel;
+      totalSpentLabel.textContent = tr.totalSpentLabel;
+      remainingWeekLabel.textContent = tr.remainingWeekLabel;
+      remainingDaysLabel.textContent = tr.remainingDaysLabel;
+      suggestedLabel.textContent = tr.suggestedLabel;
+      moneySavedLabel.textContent = tr.moneySavedLabel;
+      suggestedHelp.textContent = tr.suggestedHelp;
+      tipText.innerHTML = tr.tipText;
+      dayCol.textContent = tr.dayCol;
+      origBudgetCol.textContent = tr.origBudgetCol;
+      spentCol.textContent = tr.spentCol;
+      remainingDayCol.textContent = tr.remainingDayCol;
+      overUnderCol.textContent = tr.overUnderCol;
+      logSpendCol.textContent = tr.logSpendCol;
+      progressHelp.textContent = tr.progressHelp;
+      footerNote.innerHTML = tr.footerNote + '<strong id="currencyNote">' + sym + '</strong>.';
+      languageLabel.textContent = tr.language;
+      currencyLabel.textContent = tr.currency;
+    }
+
+    // ==== Render
+    function render(){
+      const mon = startOfWeekMonday();
+      const sun = endOfWeekSunday();
+      weekRangeEl.textContent = `${fmtDate(mon)} – ${fmtDate(sun)}`;
+
+      const rollingMode = rollingToggle ? !!rollingToggle.checked : true;
+
+      const totalSpent = state.spent.reduce((a,b)=>a+b,0);
+      const remaining = +(state.allowance - totalSpent).toFixed(2);
+
+      // Last completed (done) day index
+      let lastDoneIdx = -1;
+      for(let i=6;i>=0;i--){ if(state.done[i]) { lastDoneIdx = i; break; } }
+      const daysAhead = (lastDoneIdx === -1) ? 7 : (6 - lastDoneIdx);
+      const spentUpToLastDone = lastDoneIdx >= 0 ? state.spent.slice(0, lastDoneIdx + 1).reduce((a,b)=>a+b,0) : 0;
+      const remainingAfterLastDone = +(state.allowance - spentUpToLastDone).toFixed(2);
+      const suggested = daysAhead > 0 ? remainingAfterLastDone / daysAhead : 0;
+
+      totalSpentEl.textContent = fmtCurrency(totalSpent);
+      remainingEl.textContent = fmtCurrency(remaining);
+      remainingDaysEl.textContent = String(daysAhead);
+      suggestedEl.textContent = fmtCurrency(Math.max(0, suggested));
+
+      const overallPct = state.allowance > 0 ? clamp((totalSpent / state.allowance) * 100, 0, 100) : 0;
+      overallBar.style.width = overallPct + '%';
+
+      // Table
+      tbody.innerHTML = '';
+      const dayNames = getDays(userLang);
+      const trAdd = (translations[userLang].add || 'Add');
+      const trClear = (translations[userLang].clear || 'Clear');
+      const trDone = (translations[userLang].dayDone || 'Day done');
+      const todayIdx = dayIndexMondayFirst(new Date());
+
+      dayNames.forEach((name, i)=>{
+        // Anchor is the last DONE strictly before i
+        let prevDone = -1;
+        for(let k=i-1; k>=0; k--){ if(state.done[k]) { prevDone = k; break; } }
+
+        const spentUpToPrev = prevDone >= 0 ? state.spent.slice(0, prevDone + 1).reduce((a,b)=>a+b,0) : 0;
+        const daysAfterPrev = 6 - prevDone; // number of days from the day after prevDone to Sunday
+        let dailyBudget = daysAfterPrev > 0 ? (state.allowance - spentUpToPrev) / daysAfterPrev : 0;
+        if(!rollingMode){ dailyBudget = state.allowance / 7; }
+
+        const spent = state.spent[i] || 0;
+        const remainingDay = +(dailyBudget - spent).toFixed(2);
+        const overUnder = +(spent - dailyBudget).toFixed(2);
+        const pct = dailyBudget > 0 ? clamp((spent / dailyBudget)*100, 0, 200) : 0;
+
+        const bar = document.createElement('div');
+        bar.className = 'progress ' + (overUnder > 0 ? 'red' : overUnder < 0 ? 'green' : '');
+        bar.innerHTML = `<div style="width:${clamp(pct,0,100)}%"></div>`;
+
+        const tr = document.createElement('tr');
+        if(state.done[i]) tr.classList.add('row-done');
+        const todayBadge = i===todayIdx ? ` <span class="pill">${translations[userLang].today}</span>` : '';
+        const doneBadge = state.done[i] ? ` <span class="pill pill-done">${translations[userLang].doneBadge}</span>` : '';
+
+        tr.innerHTML = `
+          <td class="muted">${name}${todayBadge}${doneBadge}</td>
+          <td class="amount">${fmtCurrency(dailyBudget)}</td>
+          <td class="amount">${fmtCurrency(spent)}</td>
+          <td class="amount ${remainingDay<0?'over':remainingDay>0?'under':'zero'}">${fmtCurrency(remainingDay)}</td>
+          <td class="amount ${overUnder>0?'over':overUnder<0?'under':'zero'}">${overUnder>0?'+':''}${fmtCurrency(overUnder)}</td>
+          <td>
+            <div class="row">
+              <input type="number" min="0" step="0.01" placeholder="0.00" id="add-${i}" style="width:110px" ${state.done[i]?'disabled':''} />
+              <button data-i="${i}" class="addBtn" ${state.done[i]?'disabled':''}>${trAdd}</button>
+              <button data-i="${i}" class="secondary clearBtn" ${state.done[i]?'disabled':''}>${trClear}</button>
+              <button data-i="${i}" class="secondary doneBtn" ${state.done[i]?'disabled':''}>${trDone}</button>
+            </div>
+            <div style="margin-top:8px">${bar.outerHTML}</div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // bind buttons after render
+      document.querySelectorAll('.addBtn').forEach(btn=>{
+        btn.onclick = ()=>{
+          const i = +btn.getAttribute('data-i');
+          const inp = document.getElementById(`add-${i}`);
+          const val = parseFloat(inp.value);
+          addSpend(i, isFinite(val)?val:0);
+          if(inp){ inp.value=''; inp.focus(); }
+        };
+      });
+      document.querySelectorAll('.clearBtn').forEach(btn=>{
+        btn.onclick = ()=>{ const i = +btn.getAttribute('data-i'); clearSpend(i); };
+      });
+      document.querySelectorAll('.doneBtn').forEach(btn=>{
+        btn.onclick = ()=>{ const i = +btn.getAttribute('data-i'); markDayDone(i); };
+      });
+
+      // Overall bar color
+      const overall = document.getElementById('overallBar');
+      overall.classList.remove('red','green');
+      if(remaining < 0) overall.classList.add('red'); else overall.classList.add('green');
+
+      // Money Saved box (only when rolling OFF)
+      if (moneySavedKpi) {
+        const tr = translations[userLang] || translations.en;
+        if (!rollingMode) {
+          moneySavedKpi.style.display = 'block';
+          if (remaining === 0) {
+            moneySavedEl.textContent = tr.moneyNone;
+          } else if (remaining < 0) {
+            moneySavedEl.textContent = ' -' + fmtCurrency(Math.abs(remaining));
+          } else {
+            moneySavedEl.textContent = ' ' + fmtCurrency(remaining);
+          }
+        } else {
+          moneySavedKpi.style.display = 'none';
+        }
+      }
+    }
+
+    function initTexts(){ renderTexts(); }
+    initTexts();
+    render();
+  </script>
+  <!-- ===== Theme Selector Script ===== -->
+  <script>
+    const THEME_KEY = "budget_theme";
+    const themeSelect = document.getElementById("themeSelect");
+
+    // Map value -> class
+    const THEME_CLASS = {
+      original: "theme-original",
+      redscale: "theme-redscale",
+      pinkscale: "theme-pinkscale",
+      greyscale: "theme-greyscale"
+    };
+
+    // load saved or default theme
+    let currentTheme = localStorage.getItem(THEME_KEY) || "original";
+    applyTheme(currentTheme);
+    if (themeSelect) themeSelect.value = currentTheme;
+
+    if (themeSelect){
+      themeSelect.addEventListener("change", e => {
+        currentTheme = e.target.value;
+        localStorage.setItem(THEME_KEY, currentTheme);
+        applyTheme(currentTheme);
+      });
+    }
+
+    function applyTheme(theme) {
+      const cls = THEME_CLASS[theme] || THEME_CLASS.original;
+      document.body.classList.remove(...Object.values(THEME_CLASS));
+      document.body.classList.add(cls);
+      // update meta theme-color to match panel for nicer status bar
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      const probe = getComputedStyle(document.body).getPropertyValue('--panel') || '#0a1022';
+      if (metaTheme) metaTheme.setAttribute('content', probe.trim());
+    }
+  </script>
+
+  <!-- ===== PWA manifest + SW (self-contained) ===== -->
+  <script>
+    // Create manifest dynamically so no external file needed
+    const manifest = {
+      name: "£Budget",
+      short_name: "£Budget",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#0b1020",
+      theme_color: "#0b1020",
+      icons: [
+        // Tiny placeholders; replace with real data URLs or static files if you want crisp icons
+        { src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQotWQAAAABJRU5ErkJggg==", sizes: "192x192", type: "image/png" },
+        { src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQotWQAAAABJRU5ErkJggg==", sizes: "512x512", type: "image/png" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) manifestLink.setAttribute('href', manifestURL);
+
+    // Register a tiny offline-first service worker from a blob
+    const swCode = `
+      const CACHE = 'allowance-cache-v3';
+      const OFFLINE_URLS = ['.'];
+
+      self.addEventListener('install', (e) => {
+        e.waitUntil((async () => {
+          const cache = await caches.open(CACHE);
+          await cache.addAll(OFFLINE_URLS);
+          self.skipWaiting();
+        })());
+      });
+
+      self.addEventListener('activate', (e) => {
+        e.waitUntil(self.clients.claim());
+      });
+
+      self.addEventListener('fetch', (e) => {
+        e.respondWith((async () => {
+          const cached = await caches.match(e.request);
+          try {
+            const fresh = await fetch(e.request);
+            const cache = await caches.open(CACHE);
+            cache.put(e.request, fresh.clone());
+            return fresh;
+          } catch {
+            return cached || fetch(e.request);
+          }
+        })());
+      });
+    `;
+    const swBlob = new Blob([swCode], {type: 'application/javascript'});
+    const swURL = URL.createObjectURL(swBlob);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(swURL).catch(console.warn);
+    }
+  </script>
+</body>
+</html>
