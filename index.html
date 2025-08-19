@@ -6,7 +6,7 @@
   <link rel="icon" href="icon-192.jpg" sizes="192x192">
   <meta charset="UTF-8" />
   <!-- Mobile zoom fix (your chosen baseline scale) -->
-  <meta name="viewport" content="width=device-width, initial-scale=0.72, maximum-scale=1, minimum-scale=0.50, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=1, minimum-scale=0.8, user-scalable=no">
   <title>£Budget (£)</title>
 
   <style>
@@ -163,9 +163,9 @@
         <label style="color:var(--muted)">Theme</label>
         <select id="themeSelect" class="select" aria-label="Theme selector">
           <option value="original">Original</option>
-          <option value="redscale">Red</option>
-          <option value="pinkscale">Pink</option>
-          <option value="greyscale">Grey</option>
+          <option value="redscale">Redscale</option>
+          <option value="pinkscale">Pinkscale</option>
+          <option value="greyscale">Greyscale</option>
         </select>
       </div>
     </header>
@@ -180,11 +180,15 @@
           <div class="kpi" id="moneySavedKpi" style="display:none"><label id="moneySavedLabel">Money saved</label><strong id="moneySaved">—</strong></div>
         </div>
         <div class="progress" id="overallBar" style="margin-top:12px"><div></div></div>
+        <div class="help" style="margin-top:8px" id="suggestedHelp">
+          Suggested per-day = remaining after the last completed day ÷ days ahead (excludes that day).
+          All remaining days share the same target until you complete another day.
         </div>
       </div>
 
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center">
+          <div><div class="sub" id="tipText">Tip: Enter spends as you go. Use <em>Clear</em> to zero a day.</div></div>
         </div>
 
         <table>
@@ -208,7 +212,7 @@
     </section>
 
     <p class="help" style="margin-top:16px" id="footerNote">
-      By Mathew D Martindale. Data is saved locally in your browser (no account needed). Works offline.
+      By Mathew Martindale. Data is saved locally in your browser (no account needed). Works offline.
       Currency: <strong id="currencyNote">£</strong>.
     </p>
 
@@ -253,6 +257,8 @@
         remainingDaysLabel: 'Remaining days',
         suggestedLabel: 'Suggested per-day',
         moneySavedLabel: 'Money saved',
+        suggestedHelp: "Suggested per-day = remaining after the last completed day ÷ days ahead (excludes that day). All remaining days share the same target until you complete another day.",
+        tipText: 'Tip: Enter spends as you go. Use <em>Clear</em> to zero a day.',
         dayCol: 'Day',
         origBudgetCol: 'Daily budget',
         spentCol: 'Spent',
@@ -260,7 +266,7 @@
         overUnderCol: 'Over / Under',
         logSpendCol: 'Log spend',
         progressHelp: "Progress bars show % of the day's budget used. Green = under, red = over.",
-        footerNote: 'By Mathew D Martindale. Data is saved locally in your browser (no account needed). Works offline. Currency: ',
+        footerNote: 'By Mathew Martindale. Data is saved locally in your browser (no account needed). Works offline. Currency: ',
         today: 'today',
         language: 'Language',
         currency: 'Currency',
@@ -286,6 +292,8 @@
         remainingDaysLabel: 'Días restantes',
         suggestedLabel: 'Sugerido por día',
         moneySavedLabel: 'Dinero ahorrado',
+        suggestedHelp: 'Por-día = restante tras el último día completado ÷ días por delante (excluye ese día).',
+        tipText: 'Consejo: Ingresa gastos sobre la marcha. Usa <em>Borrar</em> para poner a cero un día.',
         dayCol: 'Día',
         origBudgetCol: 'Presupuesto diario',
         spentCol: 'Gastado',
@@ -293,7 +301,7 @@
         overUnderCol: 'Más / Menos',
         logSpendCol: 'Registrar gasto',
         progressHelp: 'Las barras muestran el % del presupuesto diario usado. Verde = por debajo, rojo = por encima.',
-        footerNote: 'Por Mathew D Martindale. Los datos se guardan localmente en tu navegador (no se necesita cuenta). Funciona sin conexión. Moneda: ',
+        footerNote: 'Por Mathew Martindale. Los datos se guardan localmente en tu navegador (no se necesita cuenta). Funciona sin conexión. Moneda: ',
         today: 'hoy',
         language: 'Idioma',
         currency: 'Moneda',
@@ -319,6 +327,8 @@
         remainingDaysLabel: 'Jours restants',
         suggestedLabel: 'Conseil par jour',
         moneySavedLabel: 'Argent économisé',
+        suggestedHelp: 'Par jour = restant après le dernier jour complété ÷ jours à venir (hors ce jour).',
+        tipText: 'Astuce : Saisissez vos dépenses au fur et à mesure. Utilisez <em>Effacer</em> pour remettre un jour à zéro.',
         dayCol: 'Jour',
         origBudgetCol: 'Budget quotidien',
         spentCol: 'Dépensé',
@@ -326,7 +336,7 @@
         overUnderCol: '+ / -',
         logSpendCol: 'Entrer dépense',
         progressHelp: "Les barres affichent le % du budget quotidien utilisé. Vert = en dessous, rouge = au-dessus.",
-        footerNote: 'Par Mathew D Martindale. Données enregistrées localement dans votre navigateur (aucun compte requis). Fonctionne hors ligne. Devise : ',
+        footerNote: 'Par Mathew Martindale. Données enregistrées localement dans votre navigateur (aucun compte requis). Fonctionne hors ligne. Devise : ',
         today: 'aujourd’hui',
         language: 'Langue',
         currency: 'Devise',
@@ -352,6 +362,8 @@
         remainingDaysLabel: 'Verbleibende Tage',
         suggestedLabel: 'Tagesempfehlung',
         moneySavedLabel: 'Gespartes Geld',
+        suggestedHelp: 'Pro-Tag = verbleibend nach dem zuletzt abgeschlossenen Tag ÷ verbleibende Tage (ohne diesen Tag).',
+        tipText: 'Tipp: Tragen Sie Ausgaben sofort ein. Mit <em>Löschen</em> setzen Sie den Tag zurück.',
         dayCol: 'Tag',
         origBudgetCol: 'Tagesbudget',
         spentCol: 'Ausgegeben',
@@ -359,7 +371,7 @@
         overUnderCol: '+ / -',
         logSpendCol: 'Ausgabe erfassen',
         progressHelp: 'Balken zeigen den % des Tagesbudgets. Grün = darunter, Rot = darüber.',
-        footerNote: 'Von Mathew D Martindale. Daten werden lokal im Browser gespeichert (kein Konto nötig). Offline nutzbar. Währung: ',
+        footerNote: 'Von Mathew Martindale. Daten werden lokal im Browser gespeichert (kein Konto nötig). Offline nutzbar. Währung: ',
         today: 'heute',
         language: 'Sprache',
         currency: 'Währung',
@@ -385,7 +397,9 @@
     function getSymbol() {
       return (currencyMap[userCurrency] || currencyMap.GBP).symbol;
     }
-    futurn new Intl.NumberFormat(c.locale, { style: 'currency', currency: c.code, currencyDisplay: 'symbol' }).format(n || 0);
+    function fmtCurrency(n){
+      const c = currencyMap[userCurrency] || currencyMap.GBP;
+      return new Intl.NumberFormat(c.locale, { style: 'currency', currency: c.code, currencyDisplay: 'symbol' }).format(n || 0);
     }
     function fmtDate(d){
       const langLoc = locales[userLang] || 'en-GB';
@@ -824,10 +838,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
