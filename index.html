@@ -20,23 +20,23 @@
 
   <section class="screen active" id="overviewScreen">
     <div class="card">
-      <div class="heading" id="overviewTitle">Weekly Overview</div><div class="sub" id="overviewSub">Your budget at a glance</div>
+      <div class="heading" id="overviewTitle">Weekly Overview</div><div class="sub" id="overviewSub">Your budget at a glance!</div>
     </div>
 
     <div class="card">
       <div class="allowance-head"><div class="eyebrow" id="weeklyLabel">Weekly allowance (£)</div><span class="edit">✎</span></div>
-      <div class="rowline" style="align-items:end;margin-top:4px"><input class="number" id="weeklyInput" type="number" min="0" step="0.01" placeholder="137.00" style="max-width:230px;font-size:25px;font-weight:800"><button class="secondary" id="setBtn">Set</button></div>
+      <div class="rowline" style="align-items:end;margin-top:4px"><input class="number" id="weeklyInput" type="number" min="0" step="0.01" placeholder="00.00" style="max-width:230px;font-size:25px;font-weight:800"><button class="secondary" id="setBtn">Set</button></div>
       <div class="progress" style="margin-top:15px"><div id="overallBar"></div></div>
       <div class="small-stats"><span><span id="totalSpentLabel">Total spent</span>: <strong id="totalSpent">£0.00</strong></span><span><span id="remainingWeekLabel">Remaining</span>: <strong id="remaining">£0.00</strong></span></div>
-      <div class="week-actions"><button class="secondary" id="newWeekBtn">Start new week</button><button class="secondary danger" id="clearAllBtn">Reset all</button></div>
+      <div class="week-actions"><button class="secondary" id="newWeekBtn">START NEW WEEK</button><button class="secondary danger" id="clearAllBtn">RESET</button></div>
     </div>
 
-    <div class="stat-grid"><div class="stat"><div class="stat-icon">🗓️</div><div class="eyebrow" id="dailyBudgetLabel">Daily budget</div><strong id="dailyBudget">£0.00</strong></div><div class="stat"><div class="stat-icon">🎯</div><div class="eyebrow" id="suggestedLabel">Suggested per-day</div><strong id="suggested">£0.00</strong></div></div>
+    <div class="stat-grid"><div class="stat"><div class="stat-icon">🗓️</div><div class="eyebrow" id="dailyBudgetLabel">Daily Budget</div><strong id="dailyBudget">£0.00</strong></div><div class="stat"><div class="stat-icon">🎯</div><div class="eyebrow" id="suggestedLabel">Suggested Per-Day</div><strong id="suggested">£0.00</strong></div></div>
 
     <div class="section-title" id="categoryTitle">Spending categories</div><div class="category-grid" id="weeklyCategories"></div>
     <div class="card" style="margin-top:14px"><div class="stat-head"><div><div class="eyebrow" id="weekTotalLabel">Total spent this week</div><strong id="weekTotal" style="font-size:27px">£0.00</strong></div><div class="summary-mini"><div class="eyebrow" id="weekSuggestedLabel">Suggested per-day</div><strong id="weekSuggested">£0.00</strong></div></div></div>
     <div class="section-title" id="daysTitle">Days</div><div class="spend-list" id="dayList"></div>
-    <div class="footer" id="footerNote">Data is saved locally in your browser. Works offline.</div>
+    <div class="footer" id="footerNote">Data is saved locally in your browser. Works offline. By Mathew Martindale.</div>
   </section>
 
 
@@ -49,6 +49,7 @@
     <div class="card">
       <div class="heading" id="settingsHeading">App settings</div>
       <div class="sub" id="settingsSub">Choose your currency, language and colour theme.</div>
+       <div class="sub" id="settingsSub">A budgeting app. Made by Mathew Martindale</div>
       <div class="settings-grid">
         <div class="field"><label id="currencyLabel">Currency</label><select class="select" id="currencySelect"><option value="GBP">GBP £</option><option value="USD">USD $</option><option value="CAD">CAD C$</option><option value="EUR">EUR €</option><option value="JPY">JPY ¥</option></select></div>
         <div class="field"><label id="languageLabel">Language</label><select class="select" id="langSelect"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option></select></div>
@@ -62,7 +63,7 @@
     <div class="day-card"><div class="day-date"><div style="flex:1"><strong id="dayNameLarge">Monday</strong><div class="sub" id="dayDate">12 May</div></div><span class="status" id="dayStatus">Open</span></div><div class="spend-list" id="dayCategories"></div></div>
     <div class="card day-summary"><div class="summary-main"><div><div class="eyebrow" id="dayTotalLabel">Total spent</div><strong id="dayTotal">£0.00</strong></div><div class="summary-mini"><div class="eyebrow" id="dayBudgetLabel">Daily budget</div><strong id="dayBudget">£0.00</strong></div></div><div class="progress" style="margin-top:14px"><div id="dayBar"></div></div><div class="small-stats"><span id="dayRemainingText">£0.00 remaining</span><span id="dayUsedText">0% used</span></div></div>
     <button class="primary" id="showAddBtn">＋ Add spending</button>
-    <div class="card form-card hidden" id="addForm"><div class="heading" id="addTitle">Add spending</div><div class="sub" id="addSub">Enter an amount and choose a category.</div><div class="form-grid"><div class="field"><label id="amountLabel">Amount</label><input class="number" id="spendAmount" type="number" min="0" step="0.01" placeholder="0.00"></div><div class="field"><label id="categoryLabel">Category</label><select class="select" id="spendCategory"></select></div></div><div class="form-actions"><button class="secondary" id="cancelAddBtn">Cancel</button><button class="primary" id="confirmAddBtn">Add</button></div></div>
+    <div class="card form-card hidden" id="addForm"><div class="heading" id="addTitle">Add Spending</div><div class="sub" id="addSub">Enter an amount and choose a category.</div><div class="form-grid"><div class="field"><label id="amountLabel">Amount</label><input class="number" id="spendAmount" type="number" min="0" step="0.01" placeholder="0.00"></div><div class="field"><label id="categoryLabel">Category</label><select class="select" id="spendCategory"></select></div></div><div class="form-actions"><button class="secondary" id="cancelAddBtn">Cancel</button><button class="primary" id="confirmAddBtn">Add</button></div></div>
     <div class="button-row"><button class="secondary" id="clearDayBtn">♜ Clear day</button><button class="secondary" id="doneBtn">✓ Mark as complete</button></div>
     <div class="nav-days"><div class="dots" id="dayDots"></div></div>
   </section>
